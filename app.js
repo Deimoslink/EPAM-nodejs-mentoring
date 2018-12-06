@@ -1,9 +1,16 @@
-import {User, Product} from './models';
+import DirWatcher from './dirwatcher/DirWatcher'
+import Importer from './importer/Importer'
 import {default as config} from './config/config.json';
 
-const user = new User('Aleksandr');
-const product = new Product();
+const dirWatcher = new DirWatcher();
+const importer = new Importer();
 
-user.greeting();
+dirWatcher.on('changed', (path) => {
+    importer.readCSV(path, (data) => {
+        console.log(`${path} contents:`);
+        console.log(data);
+    });
+});
 
-console.log('app works, here is the config:', config);
+dirWatcher.watch('./data', 1000);
+
