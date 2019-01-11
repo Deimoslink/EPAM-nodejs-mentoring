@@ -4,7 +4,7 @@ const csv = require('csvtojson');
 
 const importPath = promisify(fs.readFile);
 
-export default class Importer {
+class Importer {
 
     constructor() {}
 
@@ -18,7 +18,6 @@ export default class Importer {
     }
 
     readCSV(path, callback) {
-        console.log(path);
         csv()
             .fromFile(path)
             .then((jsonObj) => {
@@ -27,3 +26,5 @@ export default class Importer {
     }
 
 }
+
+module.exports = Importer;
