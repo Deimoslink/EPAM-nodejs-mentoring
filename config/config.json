@@ -1,3 +1,9 @@
 {
-	"app": "Node.js Homework Application"
+	"app": "Node.js Homework Application",
+	"auth": {
+		"google": {
+			"clientID": "508566547171-g5dc3nh7ldtvda8aeq1d48ctn6rjjvsc.apps.googleusercontent.com",
+			"clientSecret": "j-ZbJopG0Wt3KAy06DujQKmb"
+		}
+	}
 }
