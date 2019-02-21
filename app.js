@@ -7,7 +7,8 @@ const fs = require('fs');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const AJV = require('ajv');
-const OAuth2Strategy = require('passport-google-oauth20').Strategy;
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const LocalStrategy = require('passport-local').Strategy;
 
 const ajv = AJV({allErrors: true, removeAdditional: 'all'});
 const app = express();
@@ -16,7 +17,7 @@ const port = process.env.PORT || 3000;
 
 const USERS = [
     {LOGIN: 'deimos', PASSWORD: 'qwerty', _id: 0},
-    {LOGIN: 'user1', PASSWORD: '123', _id: 1},
+    {LOGIN: 'user', PASSWORD: '123', _id: 1},
 ];
 
 const errorResponse = (schemaErrors) => {
@@ -79,18 +80,33 @@ const tokenChecker = (req, res, next) => {
   }
 };
 
-const GoogleStrategy = new OAuth2Strategy({
+app.use(urlParser, bodyParser.json(), passport.initialize());
+
+passport.use(new GoogleStrategy({
     clientID: Config.auth.google.clientID,
     clientSecret: Config.auth.google.clientSecret,
     callbackURL: '/auth/google/callback'
-}, (accessToken, refreshToken, profile, cb) => {
-    console.log(cb);
-    return cb(accessToken);
-});
+    },
+    function (accessToken, refreshToken, profile, callback) {
+        return callback(null, profile, accessToken);
+    })
+);
 
-
-app.use(urlParser, bodyParser.json(), passport.initialize());
-passport.use('google', GoogleStrategy);
+passport.use(new LocalStrategy(
+    {usernameField: 'login'},
+    function(username, password, done) {
+        console.log('Local Strategy', username, password);
+        const userIndex = USERS.findIndex(user => {
+            return user.LOGIN === username;
+        });
+        const user = USERS[userIndex];
+        if (user === undefined || user.PASSWORD !== password) {
+            done({status: 'failed', errors: 'Bad username/password combination'});
+        } else {
+            done(null, user);
+        }
+    }
+));
 
 // Routes
 
@@ -101,19 +117,27 @@ app.post('/auth', validateSchema(LOGIN_JSON_SCHEMA), passwordChecker, (req, res)
     res.send(token);
 });
 
-app.get('/auth/google', passport.authenticate('google', {
-    scope: ['profile']
-}));
+app.post('/login', validateSchema(LOGIN_JSON_SCHEMA), passport.authenticate('local', {session: false}), (req, res) => {
+    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 60});
+    res.send(token);
+});
+
+app.get('/auth/google', passport.authenticate('google', {scope: ['profile']}));
 
 app.get('/auth/google/callback',
-    passport.authenticate('google'),
-    function(req, res) {
-        console.log('do something', req, res);
+    passport.authenticate('google', {session: false}),
+    (req, res) => {
+        console.log('google token:', req.authInfo);
+        console.log('user info:', req.user);
+        let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 60});
+        res.send(token);
+        // res.setHeader('x-access-token', token);
+        // res.redirect('/api/products');
     });
 
 // Protected routes
 
-app.get('/api/:method?/:id?/:property?', tokenChecker, function (req, res) {
+app.get('/api/:method?/:id?/:property?', tokenChecker, (req, res) => {
     const method = req.data.method;
     const id = req.data.id;
     const property = req.data.property;
@@ -129,7 +153,7 @@ app.get('/api/:method?/:id?/:property?', tokenChecker, function (req, res) {
     res.send({content: result});
 });
 
-app.post('/api/products', tokenChecker, function (req, res) {
+app.post('/api/products', tokenChecker, (req, res) => {
     if (req.body.name) {
         const db = fs.readFileSync('data/db.json');
         let content = JSON.parse(db.toString());
@@ -148,6 +172,6 @@ app.post('/api/products', tokenChecker, function (req, res) {
     }
 });
 
-app.listen(port, function () {
+app.listen(port, () => {
     console.log(`Example app listening on port ${port}!`);
 });
