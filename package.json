@@ -5,7 +5,10 @@
   "main": "app.js",
   "scripts": {
     "start": "nodemon app.js --exec babel-node --presets babel-preset-env",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "./node_modules/.bin/sequelize db:migrate",
+    "drop_tables": "./node_modules/.bin/sequelize db:migrate:undo",
+    "populate_db": "./node_modules/.bin/sequelize db:seed:all"
   },
   "keywords": [],
   "author": "Aleksandr Linkov",
