@@ -1,9 +1,23 @@
 {
-	"app": "Node.js Homework Application",
-	"auth": {
-		"google": {
-			"clientID": "508566547171-g5dc3nh7ldtvda8aeq1d48ctn6rjjvsc.apps.googleusercontent.com",
-			"clientSecret": "j-ZbJopG0Wt3KAy06DujQKmb"
-		}
-	}
+  "development": {
+    "username": "postgres",
+    "password": null,
+    "database": "database_development",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": null,
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "postgres",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  }
 }

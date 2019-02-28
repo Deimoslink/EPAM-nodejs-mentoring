@@ -8,3 +8,15 @@ export const LOGIN_JSON_SCHEMA = {
     },
     "required": ["login", "password"]
 };
+
+export const PRODUCT_JSON_SCHEMA = {
+    "title": "product",
+    "description": "Schema for adding product",
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "country": {"type": "string"},
+        "description": {"type": "string"}
+    },
+    "required": ["name", "country", "description"]
+};

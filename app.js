@@ -1,9 +1,8 @@
-import {LOGIN_JSON_SCHEMA} from './schemas/schemas'
-import * as Config from './config/config.json';
+import {LOGIN_JSON_SCHEMA, PRODUCT_JSON_SCHEMA} from './schemas/schemas'
+import * as Config from './config/app.config.json';
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const fs = require('fs');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const AJV = require('ajv');
@@ -15,10 +14,98 @@ const app = express();
 
 const port = process.env.PORT || 3000;
 
+// use these users to get auth token with local strategy
 const USERS = [
     {LOGIN: 'deimos', PASSWORD: 'qwerty', _id: 0},
     {LOGIN: 'user', PASSWORD: '123', _id: 1},
 ];
+
+// Database init
+
+const conString = 'postgres://postgres@localhost/database_development';
+
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize(conString, {
+    define: {
+        timestamps: false
+    }
+});
+
+// Define ORM
+const User = sequelize.define('User', {
+    firstName: {
+        type: Sequelize.STRING
+    },
+    lastName: {
+        type: Sequelize.STRING
+    },
+    email: {
+        type: Sequelize.STRING
+    }
+});
+
+const Product = sequelize.define('Product', {
+    name: {
+        type: Sequelize.STRING
+    },
+    country: {
+        type: Sequelize.STRING
+    },
+    description: {
+        type: Sequelize.TEXT
+    }
+});
+
+// DB connection methods
+const fetchUsers = (id) => {
+    const options = {
+        raw: true
+    };
+    if (id) {
+        Object.assign(options, {where: {id: id}});
+    }
+    return User.findAll(options)
+};
+
+const fetchProducts = (id) => {
+    const options = {
+        raw: true
+    };
+    if (id) {
+        Object.assign(options, {where: {id: id}});
+    }
+    return Product.findAll(options)
+};
+
+const writeProduct = (body, id) => {
+    const data = {
+        name: body.name,
+        country: body.country,
+        description: body.description
+    };
+    if (id) {
+        return Product.update(data, {
+            returning: true,
+            plain: true,
+            where: {id: id}
+        });
+    } else {
+        return Product.create(data);
+    }
+};
+
+// Database connect
+sequelize
+    .authenticate()
+    .then(() => {
+        console.log('Connection has been established successfully.');
+        // fetchUsers().then(users => {console.log('results:', users);})
+    })
+    .catch(err => {
+        console.error('Unable to connect to the database:');
+    });
+
+// Error description constructor
 
 const errorResponse = (schemaErrors) => {
     const errors = schemaErrors.map((error) => {
@@ -113,12 +200,12 @@ passport.use(new LocalStrategy(
 // Auth routes
 
 app.post('/auth', validateSchema(LOGIN_JSON_SCHEMA), passwordChecker, (req, res) => {
-    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 60});
+    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 600});
     res.send(token);
 });
 
 app.post('/login', validateSchema(LOGIN_JSON_SCHEMA), passport.authenticate('local', {session: false}), (req, res) => {
-    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 60});
+    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 600});
     res.send(token);
 });
 
@@ -129,7 +216,7 @@ app.get('/auth/google/callback',
     (req, res) => {
         console.log('google token:', req.authInfo);
         console.log('user info:', req.user);
-        let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 60});
+        let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 600});
         res.send(token);
         // res.setHeader('x-access-token', token);
         // res.redirect('/api/products');
@@ -137,40 +224,41 @@ app.get('/auth/google/callback',
 
 // Protected routes
 
-app.get('/api/:method?/:id?/:property?', tokenChecker, (req, res) => {
+app.get('/api/:method?/:id?', tokenChecker, (req, res) => {
     const method = req.data.method;
     const id = req.data.id;
-    const property = req.data.property;
-    const db = fs.readFileSync('data/db.json');
-    let result = JSON.parse(db.toString())[method];
-    if (id) {
-        result = result.filter(el => el.id.toString() === id);
-        if (property && result.length) {
-            result = result[0][property];
-        }
+    let data = new Promise((resolve) => {
+        resolve(null);
+    });
+    switch(method) {
+        case 'products':
+            data = fetchProducts(id);
+            break;
+        case 'users':
+            data = fetchUsers(id);
+            break;
+        default:
+            break;
     }
     res.setHeader('Content-Type', 'application/json');
-    res.send({content: result});
+    data.then(result => {
+        res.send({content: result});
+    }, err => {
+        res.send({error: err});
+    });
 });
 
-app.post('/api/products', tokenChecker, (req, res) => {
-    if (req.body.name) {
-        const db = fs.readFileSync('data/db.json');
-        let content = JSON.parse(db.toString());
-        const id = content.products.length;
-        const newEntry = {
-            id: id,
-            name: req.body.name,
-            reviews: req.body.reviews || []
-        };
-        content.products.push(newEntry);
-        fs.writeFileSync('data/db.json', JSON.stringify(content));
-        res.setHeader('Content-Type', 'application/json');
-        res.send({content: newEntry});
-    } else {
-        res.send('error');
-    }
+app.post('/api/products/:id?', tokenChecker, validateSchema(PRODUCT_JSON_SCHEMA), (req, res) => {
+    const id = req.data.id;
+    res.setHeader('Content-Type', 'application/json');
+    writeProduct(req.body, id).then(result => {
+        console.log(result);
+        res.send({content: id ? result[1] : result});
+    }, err => {
+        res.send({error: err});
+    });
 });
+
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}!`);
