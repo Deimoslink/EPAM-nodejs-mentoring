@@ -8,7 +8,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "./node_modules/.bin/sequelize db:migrate",
     "drop_tables": "./node_modules/.bin/sequelize db:migrate:undo",
-    "populate_db": "./node_modules/.bin/sequelize db:seed:all"
+    "populate_db": "./node_modules/.bin/sequelize db:seed:all",
+    "mongo_create_users": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/migrate-users",
+    "mongo_drop_users": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/drop-users",
+    "mongo_create_products": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/migrate-products"
   },
   "keywords": [],
   "author": "Aleksandr Linkov",
@@ -29,6 +32,8 @@
     "csvtojson": "^2.0.8",
     "express": "^4.16.4",
     "jsonwebtoken": "^8.4.0",
+    "mongodb": "^3.1.13",
+    "mongoose": "^5.4.16",
     "passport": "^0.4.0",
     "passport-google-oauth": "^1.0.0",
     "passport-local": "^1.0.0",

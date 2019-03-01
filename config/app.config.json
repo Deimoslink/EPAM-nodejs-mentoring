@@ -5,5 +5,8 @@
 			"clientID": "508566547171-g5dc3nh7ldtvda8aeq1d48ctn6rjjvsc.apps.googleusercontent.com",
 			"clientSecret": "j-ZbJopG0Wt3KAy06DujQKmb"
 		}
+	},
+	"connections": {
+		"mongoose": "mongodb://localhost:27017/myproject"
 	}
 }

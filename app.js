@@ -1,5 +1,6 @@
 import {LOGIN_JSON_SCHEMA, PRODUCT_JSON_SCHEMA} from './schemas/schemas'
 import * as Config from './config/app.config.json';
+const mongoose = require('mongoose');
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -20,90 +21,23 @@ const USERS = [
     {LOGIN: 'user', PASSWORD: '123', _id: 1},
 ];
 
-// Database init
+// Database connect
+const conStr = CONFIG.connections.mongoose;
 
-const conString = 'postgres://postgres@localhost/database_development';
-
-const Sequelize = require('sequelize');
-const sequelize = new Sequelize(conString, {
-    define: {
-        timestamps: false
-    }
-});
-
-// Define ORM
-const User = sequelize.define('User', {
-    firstName: {
-        type: Sequelize.STRING
-    },
-    lastName: {
-        type: Sequelize.STRING
-    },
-    email: {
-        type: Sequelize.STRING
-    }
-});
-
-const Product = sequelize.define('Product', {
-    name: {
-        type: Sequelize.STRING
-    },
-    country: {
-        type: Sequelize.STRING
-    },
-    description: {
-        type: Sequelize.TEXT
-    }
-});
+mongoose.connect(conStr);
 
 // DB connection methods
 const fetchUsers = (id) => {
-    const options = {
-        raw: true
-    };
-    if (id) {
-        Object.assign(options, {where: {id: id}});
-    }
-    return User.findAll(options)
+
 };
 
 const fetchProducts = (id) => {
-    const options = {
-        raw: true
-    };
-    if (id) {
-        Object.assign(options, {where: {id: id}});
-    }
-    return Product.findAll(options)
+
 };
 
 const writeProduct = (body, id) => {
-    const data = {
-        name: body.name,
-        country: body.country,
-        description: body.description
-    };
-    if (id) {
-        return Product.update(data, {
-            returning: true,
-            plain: true,
-            where: {id: id}
-        });
-    } else {
-        return Product.create(data);
-    }
-};
 
-// Database connect
-sequelize
-    .authenticate()
-    .then(() => {
-        console.log('Connection has been established successfully.');
-        // fetchUsers().then(users => {console.log('results:', users);})
-    })
-    .catch(err => {
-        console.error('Unable to connect to the database:');
-    });
+};
 
 // Error description constructor
 
