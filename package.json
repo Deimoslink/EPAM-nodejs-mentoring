@@ -11,7 +11,8 @@
     "populate_db": "./node_modules/.bin/sequelize db:seed:all",
     "mongo_create_users": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/migrate-users",
     "mongo_drop_users": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/drop-users",
-    "mongo_create_products": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/migrate-products"
+    "mongo_create_products": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/migrate-products",
+    "mongo_drop_products": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/drop-products"
   },
   "keywords": [],
   "author": "Aleksandr Linkov",

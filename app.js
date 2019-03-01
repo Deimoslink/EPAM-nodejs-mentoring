@@ -1,5 +1,7 @@
 import {LOGIN_JSON_SCHEMA, PRODUCT_JSON_SCHEMA} from './schemas/schemas'
 import * as Config from './config/app.config.json';
+import {userSchema} from './schemas/user-mongoose-schema';
+import {productSchema} from './schemas/product-mongoose-schema';
 const mongoose = require('mongoose');
 
 const express = require('express');
@@ -22,21 +24,35 @@ const USERS = [
 ];
 
 // Database connect
-const conStr = CONFIG.connections.mongoose;
+const conStr = Config.connections.mongoose;
 
 mongoose.connect(conStr);
 
+// Defy models
+const User = mongoose.model('User', userSchema);
+const Product = mongoose.model('Product', productSchema);
+
 // DB connection methods
 const fetchUsers = (id) => {
-
+    return id ? User.findById(id) : User.find();
 };
 
 const fetchProducts = (id) => {
-
+    return id ? Product.findById(id) : Product.find();
 };
 
 const writeProduct = (body, id) => {
+    return id ?
+        Product.findOneAndUpdate({_id: id}, {$set: Object.assign({}, body, {lastModifiedDate: new Date()})}, {new: true}) :
+        Product.create({$set: Object.assign({}, body, {lastModifiedDate: new Date()})});
+};
 
+const deleteUser = (id) => {
+    return User.deleteOne({_id: id});
+};
+
+const deleteProduct = (id) => {
+    return Product.deleteOne({_id: id});
 };
 
 // Error description constructor
@@ -134,12 +150,12 @@ passport.use(new LocalStrategy(
 // Auth routes
 
 app.post('/auth', validateSchema(LOGIN_JSON_SCHEMA), passwordChecker, (req, res) => {
-    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 600});
+    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 6000});
     res.send(token);
 });
 
 app.post('/login', validateSchema(LOGIN_JSON_SCHEMA), passport.authenticate('local', {session: false}), (req, res) => {
-    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 600});
+    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 6000});
     res.send(token);
 });
 
@@ -150,7 +166,7 @@ app.get('/auth/google/callback',
     (req, res) => {
         console.log('google token:', req.authInfo);
         console.log('user info:', req.user);
-        let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 600});
+        let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 6000});
         res.send(token);
         // res.setHeader('x-access-token', token);
         // res.redirect('/api/products');
@@ -182,12 +198,36 @@ app.get('/api/:method?/:id?', tokenChecker, (req, res) => {
     });
 });
 
+app.delete('/api/:method/:id', tokenChecker, (req, res) => {
+    const method = req.data.method;
+    const id = req.data.id;
+    let data = new Promise((resolve) => {
+        resolve(null);
+    });
+    switch(method) {
+        case 'products':
+            data = deleteProduct(id);
+            break;
+        case 'users':
+            data = deleteUser(id);
+            break;
+        default:
+            break;
+    }
+    res.setHeader('Content-Type', 'application/json');
+    data.then(result => {
+        res.send({content: result});
+    }, err => {
+        res.send({error: err});
+    });
+});
+
 app.post('/api/products/:id?', tokenChecker, validateSchema(PRODUCT_JSON_SCHEMA), (req, res) => {
     const id = req.data.id;
     res.setHeader('Content-Type', 'application/json');
     writeProduct(req.body, id).then(result => {
-        console.log(result);
-        res.send({content: id ? result[1] : result});
+        console.log('write', result);
+        res.send({content: result});
     }, err => {
         res.send({error: err});
     });
