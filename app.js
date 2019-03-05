@@ -43,8 +43,8 @@ const fetchProducts = (id) => {
 
 const writeProduct = (body, id) => {
     return id ?
-        Product.findOneAndUpdate({_id: id}, {$set: Object.assign({}, body, {lastModifiedDate: new Date()})}, {new: true}) :
-        Product.create({$set: Object.assign({}, body, {lastModifiedDate: new Date()})});
+        Product.findOneAndUpdate({_id: id}, Object.assign({}, body, {lastModifiedDate: new Date()}), {new: true}) :
+        Product.create(Object.assign({}, body, {lastModifiedDate: new Date()}));
 };
 
 const deleteUser = (id) => {
