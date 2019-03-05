@@ -12,7 +12,9 @@
     "mongo_create_users": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/migrate-users",
     "mongo_drop_users": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/drop-users",
     "mongo_create_products": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/migrate-products",
-    "mongo_drop_products": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/drop-products"
+    "mongo_drop_products": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/drop-products",
+    "mongo_create_cities": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/migrate-cities",
+    "mongo_drop_cities": "node ./node_modules/babel-cli/bin/babel-node.js --presets babel-preset-env ./migrations/drop-cities"
   },
   "keywords": [],
   "author": "Aleksandr Linkov",

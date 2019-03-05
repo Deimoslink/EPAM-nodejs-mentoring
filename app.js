@@ -2,6 +2,7 @@ import {LOGIN_JSON_SCHEMA, PRODUCT_JSON_SCHEMA} from './schemas/schemas'
 import * as Config from './config/app.config.json';
 import {userSchema} from './schemas/user-mongoose-schema';
 import {productSchema} from './schemas/product-mongoose-schema';
+import {citySchema} from './schemas/city-mongoose-schema';
 const mongoose = require('mongoose');
 
 const express = require('express');
@@ -29,10 +30,15 @@ const conStr = Config.connections.mongoose;
 mongoose.connect(conStr);
 
 // Defy models
+const City = mongoose.model('City', citySchema);
 const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Product', productSchema);
 
 // DB connection methods
+const fetchCities = (id) => {
+    return id ? City.findById(id) : City.find();
+};
+
 const fetchUsers = (id) => {
     return id ? User.findById(id) : User.find();
 };
@@ -43,8 +49,12 @@ const fetchProducts = (id) => {
 
 const writeProduct = (body, id) => {
     return id ?
-        Product.findOneAndUpdate({_id: id}, Object.assign({}, body, {lastModifiedDate: new Date()}), {new: true}) :
-        Product.create(Object.assign({}, body, {lastModifiedDate: new Date()}));
+        Product.findOneAndUpdate({_id: id}, addTimeStamp(body), {new: true}) :
+        Product.create(addTimeStamp(body));
+};
+
+const deleteCity = (id) => {
+    return City.deleteOne({_id: id});
 };
 
 const deleteUser = (id) => {
@@ -65,6 +75,10 @@ const errorResponse = (schemaErrors) => {
 };
 
 // Middlewares
+
+const addTimeStamp = (body) => {
+    return Object.assign({}, body, {lastModifiedDate: new Date()});
+};
 
 const validateSchema = (schemaName) => {
   return (req, res, next) => {
@@ -181,6 +195,9 @@ app.get('/api/:method?/:id?', tokenChecker, (req, res) => {
         resolve(null);
     });
     switch(method) {
+        case 'cities':
+            data = fetchCities(id);
+            break;
         case 'products':
             data = fetchProducts(id);
             break;
@@ -205,6 +222,9 @@ app.delete('/api/:method/:id', tokenChecker, (req, res) => {
         resolve(null);
     });
     switch(method) {
+        case 'cities':
+            data = deleteCity(id);
+            break;
         case 'products':
             data = deleteProduct(id);
             break;

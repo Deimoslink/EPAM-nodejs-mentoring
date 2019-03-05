@@ -1,12 +1,12 @@
 import * as CONFIG from  '../config/app.config';
-import {userSchema} from '../schemas/user-mongoose-schema';
+import {citySchema} from '../schemas/city-mongoose-schema';
 const mongoose = require('mongoose');
 const conStr = CONFIG.connections.mongoose;
 
 mongoose.connect(conStr);
 
-const User = mongoose.model('User', userSchema);
+const City = mongoose.model('City', citySchema);
 
-User.collection.drop(() => {
+City.collection.drop(() => {
     mongoose.disconnect();
 });
