@@ -1,0 +1,302 @@
+swagger: '2.0'
+info:
+  description: This is a simple API
+  version: 1.0.0
+  title: NodeJS Mentoring API
+host: localhost:3000
+basePath: /
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /api/cities:
+    get:
+      summary: fetch all cities
+      operationId: getCities
+      produces:
+        - application/json
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: object
+            properties:
+              content:
+                type: array
+                items:
+                  $ref: '#/definitions/City'
+        404:
+          description: not found
+    post:
+      summary: create a new city
+      operationId: postCity
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: City to create
+          schema:
+            $ref: '#/definitions/City'
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: object
+            properties:
+              content:
+                $ref: '#/definitions/City'
+        404:
+          description: not found
+
+  /api/cities/{id}:
+    get:
+      summary: fetch city by id
+      operationId: getCityById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: ID city to fetch
+          required: true
+          type: string
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: object
+            properties:
+              content:
+                $ref: '#/definitions/City'
+        404:
+          description: not found
+    delete:
+      summary: delete city by id
+      operationId: deleteCityById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: ID city to delete
+          required: true
+          type: string
+      responses:
+        200:
+          description: city deleted
+          schema:
+            type: object
+            properties:
+              content:
+                type: object
+                properties: 
+                  n:
+                    type: number
+                  ok:
+                    type: number
+                  deletedCount:
+                    type: number
+        404:
+          description: not found
+    post:
+      summary: modify existing city
+      operationId: modifyCity
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: ID city to modify
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: City to modify
+          schema:
+            $ref: '#/definitions/City'
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: object
+            properties:
+              content:
+                $ref: '#/definitions/City'
+        404:
+          description: not found
+          
+  /api/products:
+    get:
+      summary: fetch all products
+      operationId: getProducts
+      produces:
+        - application/json
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: object
+            properties:
+              content:
+                type: array
+                items:
+                  $ref: '#/definitions/Product'
+        404:
+          description: not found
+    post:
+      summary: create a new product
+      operationId: postProduct
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: City to create.
+          schema:
+            $ref: '#/definitions/Product'
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: object
+            properties:
+              content:
+                $ref: '#/definitions/Product'
+        404:
+          description: not found
+
+  /api/products/{id}:
+    get:
+      summary: fetch product by id
+      operationId: getProductById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: ID product to fetch
+          required: true
+          type: string
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: object
+            properties:
+              content:
+                $ref: '#/definitions/Product'
+        404:
+          description: not found
+    delete:
+      summary: delete product by id
+      operationId: deleteProductById
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: ID product to delete
+          required: true
+          type: string
+      responses:
+        200:
+          description: product deleted
+          schema:
+            type: object
+            properties:
+              content:
+                type: object
+                properties: 
+                  n:
+                    type: number
+                  ok:
+                    type: number
+                  deletedCount:
+                    type: number
+        404:
+          description: not found
+    post:
+      summary: modify existing product
+      operationId: modifyProduct
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: ID product to modify
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Product to modify
+          schema:
+            $ref: '#/definitions/Product'
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: object
+            properties:
+              content:
+                $ref: '#/definitions/Product'
+        404:
+          description: not found
+
+definitions:
+  Product:
+    type: object
+    required:
+      - name
+      - country
+      - description
+    properties:
+      _id:
+        type: string
+      name:
+        type: string
+      country:
+        type: string
+      description:
+        type: string
+  City:
+    type: object
+    required:
+      - name
+      - country
+      - location
+    properties:
+      _id:
+        type: string
+      name:
+        type: string
+      country:
+        type: string
+      location:
+        $ref: '#/definitions/Location'
+  Location:
+    required:
+      - lat
+      - lon
+    properties:
+      _id:
+        type: string
+      lat:
+        type: integer
+        minimum: -90
+        maximum: 90
+      lon:
+        type: integer
+        minimum: -180
+        maximum: 180

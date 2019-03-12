@@ -1,28 +1,18 @@
-import {LOGIN_JSON_SCHEMA, PRODUCT_JSON_SCHEMA} from './schemas/schemas'
+import {CITY_JSON_SCHEMA, PRODUCT_JSON_SCHEMA} from './schemas/schemas'
 import * as Config from './config/app.config.json';
-import {userSchema} from './schemas/user-mongoose-schema';
 import {productSchema} from './schemas/product-mongoose-schema';
 import {citySchema} from './schemas/city-mongoose-schema';
 const mongoose = require('mongoose');
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const passport = require('passport');
-const jwt = require('jsonwebtoken');
 const AJV = require('ajv');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const LocalStrategy = require('passport-local').Strategy;
+const cors = require('cors');
 
 const ajv = AJV({allErrors: true, removeAdditional: 'all'});
 const app = express();
 
 const port = process.env.PORT || 3000;
-
-// use these users to get auth token with local strategy
-const USERS = [
-    {LOGIN: 'deimos', PASSWORD: 'qwerty', _id: 0},
-    {LOGIN: 'user', PASSWORD: '123', _id: 1},
-];
 
 // Database connect
 const conStr = Config.connections.mongoose;
@@ -31,16 +21,11 @@ mongoose.connect(conStr);
 
 // Defy models
 const City = mongoose.model('City', citySchema);
-const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Product', productSchema);
 
 // DB connection methods
 const fetchCities = (id) => {
     return id ? City.findById(id) : City.find();
-};
-
-const fetchUsers = (id) => {
-    return id ? User.findById(id) : User.find();
 };
 
 const fetchProducts = (id) => {
@@ -53,12 +38,14 @@ const writeProduct = (body, id) => {
         Product.create(addTimeStamp(body));
 };
 
-const deleteCity = (id) => {
-    return City.deleteOne({_id: id});
+const writeCity = (body, id) => {
+    return id ?
+        City.findOneAndUpdate({_id: id}, addTimeStamp(body), {new: true}) :
+        City.create(addTimeStamp(body));
 };
 
-const deleteUser = (id) => {
-    return User.deleteOne({_id: id});
+const deleteCity = (id) => {
+    return City.deleteOne({_id: id});
 };
 
 const deleteProduct = (id) => {
@@ -101,94 +88,11 @@ const urlParser = (req, res, next) => {
     next();
 };
 
-const passwordChecker = (req, res, next) => {
-    const userIndex = USERS.findIndex(user => {
-        return user.LOGIN === req.body.login;
-    });
-    const user = USERS[userIndex];
-    if (user === undefined || user.PASSWORD !== req.body.password) {
-        res.status(400).json({status: 'failed', errors: 'Bad username/password combination'});
-        res.send();
-    } else {
-        req.user = user;
-        next();
-    }
-};
-
-const tokenChecker = (req, res, next) => {
-  const token = req.headers['x-access-token'];
-  if (token) {
-      jwt.verify(token, 'secret', (err, decoded) => {
-         if (err) {
-             res.status(400).json({status: 'failed', errors: 'Failed to authenticate token'});
-         } else {
-             next();
-         }
-      });
-  } else {
-      res.status(400).json({status: 'failed', errors: 'No token provided'});
-      res.send();
-  }
-};
-
-app.use(urlParser, bodyParser.json(), passport.initialize());
-
-passport.use(new GoogleStrategy({
-    clientID: Config.auth.google.clientID,
-    clientSecret: Config.auth.google.clientSecret,
-    callbackURL: '/auth/google/callback'
-    },
-    function (accessToken, refreshToken, profile, callback) {
-        return callback(null, profile, accessToken);
-    })
-);
-
-passport.use(new LocalStrategy(
-    {usernameField: 'login'},
-    function(username, password, done) {
-        console.log('Local Strategy', username, password);
-        const userIndex = USERS.findIndex(user => {
-            return user.LOGIN === username;
-        });
-        const user = USERS[userIndex];
-        if (user === undefined || user.PASSWORD !== password) {
-            done({status: 'failed', errors: 'Bad username/password combination'});
-        } else {
-            done(null, user);
-        }
-    }
-));
+app.use(cors(), urlParser, bodyParser.json());
 
 // Routes
 
-// Auth routes
-
-app.post('/auth', validateSchema(LOGIN_JSON_SCHEMA), passwordChecker, (req, res) => {
-    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 6000});
-    res.send(token);
-});
-
-app.post('/login', validateSchema(LOGIN_JSON_SCHEMA), passport.authenticate('local', {session: false}), (req, res) => {
-    let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 6000});
-    res.send(token);
-});
-
-app.get('/auth/google', passport.authenticate('google', {scope: ['profile']}));
-
-app.get('/auth/google/callback',
-    passport.authenticate('google', {session: false}),
-    (req, res) => {
-        console.log('google token:', req.authInfo);
-        console.log('user info:', req.user);
-        let token = jwt.sign({userId: req.user._id}, 'secret', {expiresIn: 6000});
-        res.send(token);
-        // res.setHeader('x-access-token', token);
-        // res.redirect('/api/products');
-    });
-
-// Protected routes
-
-app.get('/api/:method?/:id?', tokenChecker, (req, res) => {
+app.get('/api/:method?/:id?', (req, res) => {
     const method = req.data.method;
     const id = req.data.id;
     let data = new Promise((resolve) => {
@@ -201,9 +105,6 @@ app.get('/api/:method?/:id?', tokenChecker, (req, res) => {
         case 'products':
             data = fetchProducts(id);
             break;
-        case 'users':
-            data = fetchUsers(id);
-            break;
         default:
             break;
     }
@@ -215,7 +116,7 @@ app.get('/api/:method?/:id?', tokenChecker, (req, res) => {
     });
 });
 
-app.delete('/api/:method/:id', tokenChecker, (req, res) => {
+app.delete('/api/:method/:id', (req, res) => {
     const method = req.data.method;
     const id = req.data.id;
     let data = new Promise((resolve) => {
@@ -228,9 +129,6 @@ app.delete('/api/:method/:id', tokenChecker, (req, res) => {
         case 'products':
             data = deleteProduct(id);
             break;
-        case 'users':
-            data = deleteUser(id);
-            break;
         default:
             break;
     }
@@ -242,11 +140,20 @@ app.delete('/api/:method/:id', tokenChecker, (req, res) => {
     });
 });
 
-app.post('/api/products/:id?', tokenChecker, validateSchema(PRODUCT_JSON_SCHEMA), (req, res) => {
+app.post('/api/cities/:id?', validateSchema(CITY_JSON_SCHEMA), (req, res) => {
+    const id = req.data.id;
+    res.setHeader('Content-Type', 'application/json');
+    writeCity(req.body, id).then(result => {
+        res.send({content: result});
+    }, err => {
+        res.send({error: err});
+    });
+});
+
+app.post('/api/products/:id?', validateSchema(PRODUCT_JSON_SCHEMA), (req, res) => {
     const id = req.data.id;
     res.setHeader('Content-Type', 'application/json');
     writeProduct(req.body, id).then(result => {
-        console.log('write', result);
         res.send({content: result});
     }, err => {
         res.send({error: err});
